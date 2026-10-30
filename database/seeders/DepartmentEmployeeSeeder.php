@@ -10,38 +10,33 @@ class DepartmentEmployeeSeeder extends Seeder
 {
     public function run(): void
     {
-        $legal = Department::create(['name' => 'Legal']);
-        $hr = Department::create(['name' => 'Human Resources']);
-        $admin = Department::create(['name' => 'Administration']);
+        $legal = Department::firstOrCreate(['name' => 'Legal']);
+        $hr = Department::firstOrCreate(['name' => 'Human Resources']);
+        $admin = Department::firstOrCreate(['name' => 'Administration']);
 
-        Employee::create([
-            'name' => 'Ali Ahmed',
-            'email' => 'ali@justiceco.com',
-            'department_id' => $legal->id,
-        ]);
+        Employee::firstOrCreate(
+            ['email' => 'ali@justiceco.com'],
+            ['name' => 'Ali Ahmed', 'department_id' => $legal->id]
+        );
 
-        Employee::create([
-            'name' => 'Sara Khan',
-            'email' => 'sara@justiceco.com',
-            'department_id' => $hr->id,
-        ]);
+        Employee::firstOrCreate(
+            ['email' => 'sara@justiceco.com'],
+            ['name' => 'Sara Khan', 'department_id' => $hr->id]
+        );
 
-        Employee::create([
-            'name' => 'Usman Malik',
-            'email' => 'usman@justiceco.com',
-            'department_id' => $legal->id,
-        ]);
+        Employee::firstOrCreate(
+            ['email' => 'usman@justiceco.com'],
+            ['name' => 'Usman Malik', 'department_id' => $legal->id]
+        );
 
-        Employee::create([
-            'name' => 'Ayesha Noor',
-            'email' => 'ayesha@justiceco.com',
-            'department_id' => $admin->id,
-        ]);
+        Employee::firstOrCreate(
+            ['email' => 'ayesha@justiceco.com'],
+            ['name' => 'Ayesha Noor', 'department_id' => $admin->id]
+        );
 
-        Employee::create([
-            'name' => 'Hamza Tariq',
-            'email' => 'hamza@justiceco.com',
-            'department_id' => $hr->id,
-        ]);
+        Employee::firstOrCreate(
+            ['email' => 'hamza@justiceco.com'],
+            ['name' => 'Hamza Tariq', 'department_id' => $hr->id]
+        );
     }
 }
