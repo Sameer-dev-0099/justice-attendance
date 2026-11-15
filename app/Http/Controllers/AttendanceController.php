@@ -22,34 +22,32 @@ class AttendanceController extends Controller
         return view('attendance.index', compact('employees'));
     }
 
-    
-public function checkIn(Employee $employee)
-{
-    $today = Carbon::today();
+    public function checkIn(Employee $employee)
+    {
+        $today = Carbon::today();
 
-    $attendance = Attendance::where('employee_id', $employee->id)
-        ->whereDate('date', $today)
-        ->first();
+        $attendance = Attendance::where('employee_id', $employee->id)
+            ->whereDate('date', $today)
+            ->first();
 
-    if ($attendance && $attendance->check_in_at !== null) {
+        if ($attendance && $attendance->check_in_at !== null) {
+            return redirect()->route('attendance.index')
+                ->with('error', 'Employee has already checked in today.');
+        }
+
+        if (!$attendance) {
+            Attendance::create([
+                'employee_id' => $employee->id,
+                'date' => $today,
+                'check_in_at' => now(),
+            ]);
+        } else {
+            $attendance->update(['check_in_at' => now()]);
+        }
+
         return redirect()->route('attendance.index')
-            ->with('error', 'Employee has already checked in today.');
+            ->with('success', 'Check-in recorded successfully.');
     }
-
-    if (!$attendance) {
-        Attendance::create([
-            'employee_id' => $employee->id,
-            'date' => $today,
-            'check_in_at' => now(),
-        ]);
-    } else {
-        $attendance->update(['check_in_at' => now()]);
-    }
-
-    return redirect()->route('attendance.index')
-        ->with('success', 'Check-in recorded successfully.');
-}
-
 
     public function checkOut(Employee $employee)
     {
@@ -73,5 +71,53 @@ public function checkIn(Employee $employee)
 
         return redirect()->route('attendance.index')
             ->with('success', 'Check-out recorded successfully.');
+    }
+
+    public function exportMonthly(Request $request)
+    {
+        $validated = $request->validate([
+            'month' => ['required', 'date_format:Y-m'],
+        ]);
+
+        $startDate = Carbon::createFromFormat('Y-m', $validated['month'])
+            ->startOfMonth();
+
+        $endDate = $startDate->copy()->endOfMonth();
+
+        $attendances = Attendance::with('employee')
+            ->whereBetween('date', [
+                $startDate->toDateString(),
+                $endDate->toDateString(),
+            ])
+            ->orderBy('date')
+            ->orderBy('employee_id')
+            ->get();
+
+        return response()->streamDownload(function () use ($attendances) {
+            $file = fopen('php://output', 'w');
+
+            // UTF-8 support for Excel
+            fwrite($file, "\xEF\xBB\xBF");
+
+            fputcsv($file, [
+                'Employee Name',
+                'Date',
+                'Check In',
+                'Check Out',
+            ]);
+
+            foreach ($attendances as $attendance) {
+                fputcsv($file, [
+                    $attendance->employee->name,
+                    $attendance->date->format('Y-m-d'),
+                    $attendance->check_in_at?->format('H:i:s') ?? '',
+                    $attendance->check_out_at?->format('H:i:s') ?? '',
+                ]);
+            }
+
+            fclose($file);
+        }, 'attendance-' . $validated['month'] . '.csv', [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+        ]);
     }
 }

@@ -1,0 +1,7 @@
+#!/bin/sh
+set -e
+cd /var/www/html
+php artisan config:clear
+php artisan migrate --force
+php artisan storage:link || true
+exec apache2-foreground

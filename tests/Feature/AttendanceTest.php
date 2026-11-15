@@ -103,4 +103,70 @@ class AttendanceTest extends TestCase
 
         $this->assertDatabaseCount('attendances', 0);
     }
+
+
+public function test_monthly_attendance_csv_can_be_downloaded(): void
+{
+    $response = $this->get(route('attendance.export', [
+        'month' => '2026-11',
+    ]));
+
+    $response->assertOk();
+    $response->assertDownload('attendance-2026-11.csv');
+}
+
+public function test_monthly_csv_contains_employee_attendance_data(): void
+{
+    $employee = $this->createEmployee();
+
+    Attendance::create([
+        'employee_id' => $employee->id,
+        'date' => '2026-11-10',
+        'check_in_at' => '2026-11-10 09:00:00',
+        'check_out_at' => '2026-11-10 17:00:00',
+    ]);
+
+    $response = $this->get(route('attendance.export', [
+        'month' => '2026-11',
+    ]));
+
+    $response->assertOk();
+
+    $content = $response->streamedContent();
+
+    $this->assertStringContainsString('Employee Name', $content);
+    $this->assertStringContainsString('Check In', $content);
+    $this->assertStringContainsString('Test Employee', $content);
+    $this->assertStringContainsString('09:00:00', $content);
+    $this->assertStringContainsString('17:00:00', $content);
+}
+
+public function test_monthly_csv_excludes_other_month_records(): void
+{
+    $employee = $this->createEmployee();
+
+    Attendance::create([
+        'employee_id' => $employee->id,
+        'date' => '2026-11-10',
+        'check_in_at' => '2026-11-10 09:00:00',
+    ]);
+
+    Attendance::create([
+        'employee_id' => $employee->id,
+        'date' => '2026-10-10',
+        'check_in_at' => '2026-10-10 09:00:00',
+    ]);
+
+    $response = $this->get(route('attendance.export', [
+        'month' => '2026-11',
+    ]));
+
+    $response->assertOk();
+
+    $content = $response->streamedContent();
+
+    $this->assertStringContainsString('2026-11-10', $content);
+    $this->assertStringNotContainsString('2026-10-10', $content);
+}
+
 }

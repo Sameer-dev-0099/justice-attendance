@@ -7,6 +7,7 @@ use App\Http\Controllers\LeaveRequestController;
 
 Route::resource('employees', EmployeeController::class);
 
+// Attendance Routes
 Route::get('/attendance', [AttendanceController::class, 'index'])
     ->name('attendance.index');
 
@@ -15,6 +16,9 @@ Route::post('/attendance/{employee}/check-in', [AttendanceController::class, 'ch
 
 Route::post('/attendance/{employee}/check-out', [AttendanceController::class, 'checkOut'])
     ->name('attendance.check-out');
+
+Route::get('/attendance/export', [AttendanceController::class, 'exportMonthly'])
+    ->name('attendance.export');
 
 // Leave Request Routes
 Route::get('/leave-requests/create', [LeaveRequestController::class, 'create'])
